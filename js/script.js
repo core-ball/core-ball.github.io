@@ -23,20 +23,42 @@ function open_fullscreen() {
 // Modal game launcher
 // ==============================
 
+// Debounce function for performance
+function debounce(func, wait) {
+  var timeout;
+  return function executedFunction() {
+    var context = this;
+    var args = arguments;
+    var later = function () {
+      timeout = null;
+      func.apply(context, args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Use passive event listeners for better performance
 document.addEventListener("DOMContentLoaded", function () {
   // Delegate clicks on game items (home + category) to open modal instead of navigating
-  document.addEventListener("click", function (e) {
-    var anchor = e.target.closest(".list-game .game-item a, .list-item a.item");
-    if (anchor) {
-      e.preventDefault();
-      var url = anchor.getAttribute("href");
-      var titleNode = anchor.querySelector(".recommend-title, .heading-game");
-      var title = titleNode
-        ? titleNode.textContent.trim()
-        : anchor.getAttribute("title") || "Game";
-      openGameModal(url, title);
-    }
-  });
+  document.addEventListener(
+    "click",
+    function (e) {
+      var anchor = e.target.closest(
+        ".list-game .game-item a, .list-item a.item"
+      );
+      if (anchor) {
+        e.preventDefault();
+        var url = anchor.getAttribute("href");
+        var titleNode = anchor.querySelector(".recommend-title, .heading-game");
+        var title = titleNode
+          ? titleNode.textContent.trim()
+          : anchor.getAttribute("title") || "Game";
+        openGameModal(url, title);
+      }
+    },
+    { passive: false }
+  );
 });
 
 function openGameModal(url, title) {
@@ -105,7 +127,12 @@ function closeGameModal() {
       }
       modal.classList.remove("show");
     }
+    // Always remove noScroll class
     document.body.classList.remove("noScroll");
+    // Reset body position
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
   };
 
   try {
