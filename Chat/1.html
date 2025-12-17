@@ -461,7 +461,10 @@
         </button>
       </div>
       <div class="rooms-grid" id="roomsGrid">
-        <!-- Rooms will be added here dynamically -->
+        <!-- Loading state -->
+        <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #666;">
+          <p style="font-size: 16px;">⏳ Loading chat rooms...</p>
+        </div>
       </div>
     </div>
 
@@ -676,8 +679,24 @@
       // Hiển thị danh sách phòng
       function displayRooms(rooms) {
         roomsGrid.innerHTML = "";
+        
+        // Check if rooms object is empty
+        const roomEntries = Object.entries(rooms || {});
+        if (roomEntries.length === 0) {
+          roomsGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #666;">
+              <p style="font-size: 18px; margin-bottom: 10px;">📭 No chat rooms yet</p>
+              <p style="font-size: 14px; color: #999;">Be the first to create a room!</p>
+              <button class="create-room" onclick="showCreateModal()" style="margin-top: 20px;">
+                Create First Room
+              </button>
+            </div>
+          `;
+          return;
+        }
+        
         // Sort rooms by pin status
-        const sortedRooms = Object.entries(rooms).sort((a, b) => {
+        const sortedRooms = roomEntries.sort((a, b) => {
           const aPinned = a[1].isPinned || false;
           const bPinned = b[1].isPinned || false;
           if (aPinned === bPinned) return 0;

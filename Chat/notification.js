@@ -23,9 +23,9 @@ const notificationHTML = `
 
         <!-- Chỗ này là chèn khung chat --------------------------------------------------------------------------------------------------------------->
 
-        <!-- Chat container - Lazy loaded to improve performance -->
+        <!-- Chat container - Loaded when popup is shown -->
         <div class="chat-container" id="chat-container">
-            <!-- Chat iframe will be loaded after 5 seconds to improve initial page load -->
+            <!-- Chat iframe will be loaded when popup is displayed -->
             <div style="width: 100%; height: 600px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 8px;">
                 <p style="color: #666;">Loading chat...</p>
             </div>
@@ -634,6 +634,35 @@ const notificationHTML = `
 
 // Removed game handlers
 
+// Function to load chat iframe
+function loadChatIframe() {
+  const chatContainer = document.getElementById("chat-container");
+  if (chatContainer && !chatContainer.querySelector("iframe")) {
+    chatContainer.innerHTML =
+      '<iframe src="/Chat/1.html" title="Chat Room - Join the conversation" frameborder="0" style="width: 100%; height: 600px; border: none; margin-top: 15px;" allow="autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media" allowfullscreen sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"></iframe>';
+    console.log("Chat iframe loaded");
+    
+    // Listen for iframe load errors
+    const iframe = chatContainer.querySelector("iframe");
+    if (iframe) {
+      iframe.onload = function() {
+        console.log("Chat iframe content loaded successfully");
+        try {
+          // Try to access iframe content to check if it loaded
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          console.log("Iframe document accessible:", !!iframeDoc);
+        } catch (e) {
+          console.warn("Cannot access iframe content (expected if cross-origin):", e.message);
+        }
+      };
+      iframe.onerror = function() {
+        console.error("Error loading chat iframe");
+        chatContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #ff6b6b;"><p>⚠️ Error loading chat. Please refresh the page.</p></div>';
+      };
+    }
+  }
+}
+
 // Initialize notification
 function initNotification() {
   // Insert HTML into body
@@ -642,10 +671,14 @@ function initNotification() {
   // If user dismissed before, do not auto show across pages
   const dismissed = localStorage.getItem("popupDismissed") === "true";
   if (!dismissed) {
-    // Show notification after 3 seconds
+    // Show notification after 2 seconds
     setTimeout(() => {
       const popup = document.getElementById("popupNotification");
-      if (popup) popup.classList.add("show");
+      if (popup) {
+        popup.classList.add("show");
+        // Load chat iframe immediately when popup is shown
+        setTimeout(loadChatIframe, 300); // Small delay to ensure popup is rendered
+      }
     }, 2000);
   } else {
     // Provide a manual open button if dismissed
@@ -675,8 +708,12 @@ function showMinimizeButton() {
   minimizeBtn.id = "minimizeButton";
   minimizeBtn.innerHTML = "📢 New Notification";
   minimizeBtn.onclick = () => {
-    if (popup) popup.classList.remove("minimized");
-    popup.classList.add("show");
+    if (popup) {
+      popup.classList.remove("minimized");
+      popup.classList.add("show");
+      // Load chat iframe when user manually opens popup
+      setTimeout(loadChatIframe, 300);
+    }
     // User chose to reopen → treat as not dismissed so future pages auto show
     localStorage.removeItem("popupDismissed");
     minimizeBtn.remove();
@@ -767,14 +804,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initNotification();
   attachCloakHandler();
   attachCustomCloakHandler();
-
-  // Lazy load chat iframe after 5 seconds to improve initial page load performance
-  setTimeout(function () {
-    const chatContainer = document.getElementById("chat-container");
-    if (chatContainer) {
-      chatContainer.innerHTML =
-        '<iframe src="/Chat/1.html" title="Chat Room - Join the conversation" frameborder="0" style="width: 100%; height: 600px; border: none; margin-top: 15px;"></iframe>';
-      console.log("Chat iframe loaded after 5s delay");
-    }
-  }, 5000);
+  
+  // Chat iframe will be loaded when popup is shown (via loadChatIframe function)
+  // This improves initial page load performance while ensuring chat loads quickly when needed
 });
