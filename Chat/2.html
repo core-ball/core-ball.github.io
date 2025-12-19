@@ -1298,7 +1298,11 @@
           timeSpan.className = "msg-time";
           try {
             const dt = new Date(data.timestamp || Date.now());
-            timeSpan.textContent = dt.toLocaleTimeString([], {
+            // Hiển thị ngày tháng năm và giờ
+            timeSpan.textContent = dt.toLocaleString([], {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
               hour: "2-digit",
               minute: "2-digit",
             });
